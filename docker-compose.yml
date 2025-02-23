@@ -20,6 +20,8 @@ services:
         STORE_MODEL_IN_DB: "True" # allows adding models to proxy via UI
     env_file:
       - .env # Load local .env file
+    networks:
+      - litellmnet
 
  
   db:
@@ -29,26 +31,38 @@ services:
       POSTGRES_DB: litellm
       POSTGRES_USER: llmproxy
       POSTGRES_PASSWORD: dbpassword9090
+    ports:
+      - 5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d litellm -U llmproxy"]
       interval: 1s
       timeout: 5s
       retries: 10
+    networks:
+      - litellmnet
   
   prometheus:
     image: prom/prometheus
     volumes:
       - prometheus_data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
     restart: always
+    networks:
+      - litellmnet
 
 volumes:
   prometheus_data:
     driver: local
+
+networks:
+  litellmnet:
+    driver: bridge
 
 
 # ...rest of your docker-compose config if any
